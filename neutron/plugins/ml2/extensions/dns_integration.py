@@ -38,9 +38,11 @@ class DNSExtensionDriver(api.ExtensionDriver):
 
     @property
     def extension_alias(self):
+        LOG.debug("[tmp-o9NQn5] ")
         return self._supported_extension_alias
 
     def process_create_network(self, plugin_context, request_data, db_data):
+        LOG.debug("[tmp-o9NQn5]  plugin_context:%s, request_data:%s, db_data:%s," %(plugin_context, request_data, db_data))
         dns_domain = request_data.get(dns.DNSDOMAIN)
         if not validators.is_attr_set(dns_domain):
             return
@@ -52,6 +54,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
         db_data[dns.DNSDOMAIN] = dns_domain
 
     def process_update_network(self, plugin_context, request_data, db_data):
+        LOG.debug("[tmp-o9NQn5]  plugin_context:%s, request_data:%s, db_data:%s," %(plugin_context, request_data, db_data))
         new_value = request_data.get(dns.DNSDOMAIN)
         if not validators.is_attr_set(new_value):
             return
@@ -79,6 +82,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
             db_data[dns.DNSDOMAIN] = new_value
 
     def process_create_port(self, plugin_context, request_data, db_data):
+        LOG.debug("[tmp-o9NQn5]  plugin_context:%s, request_data:%s, db_data:%s," %(plugin_context, request_data, db_data))
         if not (request_data.get(dns.DNSNAME) or
                 request_data.get(dns.DNSDOMAIN)):
             return
@@ -92,13 +96,16 @@ class DNSExtensionDriver(api.ExtensionDriver):
 
     def _create_port_dns_record(self, plugin_context, request_data, db_data,
                                 network, dns_name):
+        LOG.debug('[tmp-o9NQn5] _create_port_dns_record('+str(plugin_context)+', '+str(request_data)+', '+str(db_data)+', '+str(network)+', '+str(dns_name)+')')
         external_dns_domain = (request_data.get(dns.DNSDOMAIN) or
-                               network.get(dns.DNSDOMAIN))
+                               network.get(dns.DNSDOMAIN)) #db_data['tenant_id'] + "." +
+        LOG.debug('[tmp-o9NQn5] CREATE_PORT_DNS_RECORD '+ str(external_dns_domain))
         current_dns_name, current_dns_domain = (
             self._calculate_current_dns_name_and_domain(
                 dns_name, external_dns_domain,
                 self.external_dns_not_needed(plugin_context, network)))
 
+        LOG.debug('[tmp-o9NQn5] CALLING OUTPUT self._calculate_current_dns_name_and_domain('+ str(current_dns_name) + ", " + str(current_dns_domain)+", " + str(self.external_dns_not_needed(plugin_context, network))  + ")")
         dns_data_obj = port_obj.PortDNS(
             plugin_context,
             port_id=db_data['id'],
@@ -124,12 +131,14 @@ class DNSExtensionDriver(api.ExtensionDriver):
         # 3) The user request contains a valid non-blank value for the port's
         #    dns_domain or the port's network has a non-blank value in its
         #    dns_domain attribute
+        LOG.debug('[tmp-o9NQn5] CALLING _calculate_current_dns_name_and_domain('+ str(dns_name) + ", " + str(external_dns_domain) + ", " + str(no_external_dns_service) + ")")
         are_both_dns_attributes_set = dns_name and external_dns_domain
         if no_external_dns_service or not are_both_dns_attributes_set:
             return '', ''
         return dns_name, external_dns_domain
 
     def _update_dns_db(self, plugin_context, request_data, db_data, network):
+        LOG.debug("[tmp-o9NQn5]  plugin_context:%s, request_data:%s, db_data:%s, network:%s," %(plugin_context, request_data, db_data, network))
         dns_name = request_data.get(dns.DNSNAME)
         dns_domain = request_data.get(dns.DNSDOMAIN)
         has_fixed_ips = 'fixed_ips' in request_data
@@ -162,6 +171,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
         return dns_data_db
 
     def _populate_previous_external_dns_data(self, dns_data_db):
+        LOG.debug("[tmp-o9NQn5]  dns_data_db:%s," %(dns_data_db))
         dns_data_db['previous_dns_name'] = (
             dns_data_db['current_dns_name'])
         dns_data_db['previous_dns_domain'] = (
@@ -191,6 +201,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
         return dns_data_db
 
     def process_update_port(self, plugin_context, request_data, db_data):
+        LOG.debug("[tmp-o9NQn5]  plugin_context:%s, request_data:%s, db_data:%s," %(plugin_context, request_data, db_data))
         has_dns_name = dns.DNSNAME in request_data
         has_fixed_ips = 'fixed_ips' in request_data
         has_dns_domain = dns.DNSDOMAIN in request_data
@@ -243,6 +254,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
         return dns_data_db
 
     def external_dns_not_needed(self, context, network):
+        LOG.debug("[tmp-o9NQn5]  context:%s, network:%s," %(context, network))
         """Decide if ports in network need to be sent to the DNS service.
 
         :param context: plugin request context
@@ -252,12 +264,14 @@ class DNSExtensionDriver(api.ExtensionDriver):
         pass
 
     def extend_network_dict(self, session, db_data, response_data):
+        LOG.debug("[tmp-o9NQn5]  session:%s, db_data:%s, response_data:%s," %(session, db_data, response_data))
         response_data[dns.DNSDOMAIN] = ''
         if db_data.dns_domain:
             response_data[dns.DNSDOMAIN] = db_data.dns_domain[dns.DNSDOMAIN]
         return response_data
 
     def _get_dns_domain(self):
+        LOG.debug("[tmp-o9NQn5] ")
         if not cfg.CONF.dns_domain:
             return ''
         if cfg.CONF.dns_domain.endswith('.'):
@@ -265,12 +279,14 @@ class DNSExtensionDriver(api.ExtensionDriver):
         return '%s.' % cfg.CONF.dns_domain
 
     def _get_request_dns_name(self, port):
+        LOG.debug("[tmp-o9NQn5]  port:%s," %(port))
         dns_domain = self._get_dns_domain()
         if ((dns_domain and dns_domain != DNS_DOMAIN_DEFAULT)):
             return (port.get(dns.DNSNAME, ''), False)
         return ('', True)
 
     def _get_request_dns_name_and_domain_name(self, dns_data_db):
+        LOG.debug("[tmp-o9NQn5]  dns_data_db:%s," %(dns_data_db))
         dns_domain = self._get_dns_domain()
         dns_name = ''
         if ((dns_domain and dns_domain != DNS_DOMAIN_DEFAULT)):
@@ -279,6 +295,8 @@ class DNSExtensionDriver(api.ExtensionDriver):
         return dns_name, dns_domain
 
     def _get_dns_names_for_port(self, ips, dns_data_db):
+        # TODO : right dns_assignment with tenant.region.cloud.ovh.net.
+        LOG.debug("[tmp-o9NQn5]  ips:%s, dns_data_db:%s," %(ips, dns_data_db))
         dns_assignment = []
         dns_name, dns_domain = self._get_request_dns_name_and_domain_name(
             dns_data_db)
@@ -300,11 +318,13 @@ class DNSExtensionDriver(api.ExtensionDriver):
         return dns_assignment
 
     def _get_dns_name_for_port_get(self, port, dns_data_db):
+        LOG.debug("[tmp-o9NQn5]  port:%s, dns_data_db:%s," %(port, dns_data_db))
         if port['fixed_ips']:
             return self._get_dns_names_for_port(port['fixed_ips'], dns_data_db)
         return []
 
     def _extend_port_dict(self, session, db_data, response_data, dns_data_db):
+        LOG.debug("[tmp-o9NQn5]  session:%s, db_data:%s, response_data:%s, dns_data_db:%s," %(session, db_data, response_data, dns_data_db))
         if not dns_data_db:
             response_data[dns.DNSNAME] = ''
         else:
@@ -314,11 +334,13 @@ class DNSExtensionDriver(api.ExtensionDriver):
         return response_data
 
     def extend_port_dict(self, session, db_data, response_data):
+        LOG.debug("[tmp-o9NQn5]  session:%s, db_data:%s, response_data:%s," %(session, db_data, response_data))
         dns_data_db = db_data.dns
         return self._extend_port_dict(session, db_data, response_data,
                                       dns_data_db)
 
     def _get_network(self, context, network_id):
+        LOG.debug("[tmp-o9NQn5]  context:%s, network_id:%s," %(context, network_id))
         plugin = directory.get_plugin()
         return plugin.get_network(context, network_id)
 
@@ -326,9 +348,11 @@ class DNSExtensionDriver(api.ExtensionDriver):
 class DNSExtensionDriverML2(DNSExtensionDriver):
 
     def initialize(self):
+        LOG.debug("[tmp-o9NQn5] ")
         LOG.info("DNSExtensionDriverML2 initialization complete")
 
     def _is_tunnel_tenant_network(self, provider_net):
+        LOG.debug("[tmp-o9NQn5]  provider_net:%s," %(provider_net))
         if provider_net['network_type'] == 'geneve':
             tunnel_ranges = cfg.CONF.ml2_type_geneve.vni_ranges
         elif provider_net['network_type'] == 'vxlan':
@@ -345,6 +369,7 @@ class DNSExtensionDriverML2(DNSExtensionDriver):
             return int(tun_min) <= segmentation_id <= int(tun_max)
 
     def _is_vlan_tenant_network(self, provider_net):
+        LOG.debug("[tmp-o9NQn5]  provider_net:%s," %(provider_net))
         network_vlan_ranges = plugin_utils.parse_network_vlan_ranges(
             cfg.CONF.ml2_type_vlan.network_vlan_ranges)
         vlan_ranges = network_vlan_ranges[provider_net['physical_network']]
@@ -356,15 +381,20 @@ class DNSExtensionDriverML2(DNSExtensionDriver):
                 return True
 
     def external_dns_not_needed(self, context, network):
+        LOG.debug("[tmp-o9NQn5]  context:%s, network:%s," %(context, network))
         dns_driver = _get_dns_driver()
         if not dns_driver:
+            LOG.debug('[tmp-o9NQn5] not dns_driver.')
             return True
         if network['router:external']:
-            return True
+            LOG.debug("[tmp-o9NQn5] network['router:external']")
+            return False
         segments = segments_db.get_network_segments(context, network['id'])
         if len(segments) > 1:
+            LOG.debug('[tmp-o9NQn5] segments > 1')
             return False
         provider_net = segments[0]
+        LOG.debug('[tmp-o9NQn5] provider_net network_type : ' + str(provider_net['network_type']))
         if provider_net['network_type'] == 'local':
             return True
         if provider_net['network_type'] == 'flat':
@@ -372,7 +402,8 @@ class DNSExtensionDriverML2(DNSExtensionDriver):
         if provider_net['network_type'] == 'vlan':
             return self._is_vlan_tenant_network(provider_net)
         if provider_net['network_type'] in ['gre', 'vxlan', 'geneve']:
-            return self._is_tunnel_tenant_network(provider_net)
+            return False
+            # return self._is_tunnel_tenant_network(provider_net)
         return True
 
 
@@ -381,12 +412,15 @@ class DNSDomainPortsExtensionDriver(DNSExtensionDriverML2):
 
     @property
     def extension_aliases(self):
+        LOG.debug("[tmp-o9NQn5] ")
         return self._supported_extension_aliases
 
     def initialize(self):
+        LOG.debug("[tmp-o9NQn5] ")
         LOG.info("DNSDomainPortsExtensionDriver initialization complete")
 
     def extend_port_dict(self, session, db_data, response_data):
+        LOG.debug("[tmp-o9NQn5]  session:%s, db_data:%s, response_data:%s," %(session, db_data, response_data))
         response_data = (
             super(DNSDomainPortsExtensionDriver, self).extend_port_dict(
                 session, db_data, response_data))
@@ -400,6 +434,7 @@ DNS_DRIVER = None
 
 
 def _get_dns_driver():
+    LOG.debug("[tmp-o9NQn5] ")
     global DNS_DRIVER
     if DNS_DRIVER:
         return DNS_DRIVER
@@ -418,6 +453,7 @@ def _get_dns_driver():
 
 
 def _create_port_in_external_dns_service(resource, event, trigger, **kwargs):
+    LOG.debug("[tmp-o9NQn5]  resource:%s, event:%s, trigger:%s," %(resource, event, trigger))
     dns_driver = _get_dns_driver()
     if not dns_driver:
         return
@@ -449,6 +485,7 @@ def _send_data_to_external_dns_service(context, dns_driver, dns_domain,
 
 def _remove_data_from_external_dns_service(context, dns_driver, dns_domain,
                                            dns_name, records):
+    LOG.debug("[tmp-o9NQn5] context:%s, dns_driver:%s, dns_domain:%s, dns_name:%s, records:%s," %(context, dns_driver, dns_domain, dns_name, records))
     try:
         dns_driver.delete_record_set(context, dns_domain, dns_name, records)
     except (dns.DNSDomainNotFound, dns.DuplicateRecordSet) as e:
@@ -463,6 +500,7 @@ def _remove_data_from_external_dns_service(context, dns_driver, dns_domain,
 
 
 def _update_port_in_external_dns_service(resource, event, trigger, **kwargs):
+    LOG.debug("[tmp-o9NQn5]  resource:%s, event:%s, trigger:%s," %(resource, event, trigger))
     dns_driver = _get_dns_driver()
     if not dns_driver:
         return
@@ -498,6 +536,7 @@ def _update_port_in_external_dns_service(resource, event, trigger, **kwargs):
 
 
 def _delete_port_in_external_dns_service(resource, event, trigger, **kwargs):
+    LOG.debug("[tmp-o9NQn5]  resource:%s, event:%s, trigger:%s," %(resource, event, trigger))
     dns_driver = _get_dns_driver()
     if not dns_driver:
         return
@@ -505,11 +544,13 @@ def _delete_port_in_external_dns_service(resource, event, trigger, **kwargs):
     port_id = kwargs['port_id']
     dns_data_db = port_obj.PortDNS.get_object(
         context, port_id=port_id)
+    LOG.debug("OUTPUT dns_data_db : " + str(dns_data_db))
     if not dns_data_db:
         return
     if dns_data_db['current_dns_name']:
         ip_allocations = port_obj.IPAllocation.get_objects(context,
                                                            port_id=port_id)
+        LOG.debug("OUTPUT ip_allocations : " + str(ip_allocations))
         records = [str(alloc['ip_address']) for alloc in ip_allocations]
         _remove_data_from_external_dns_service(
             context, dns_driver, dns_data_db['current_dns_domain'],
@@ -517,6 +558,7 @@ def _delete_port_in_external_dns_service(resource, event, trigger, **kwargs):
 
 
 def subscribe():
+    LOG.debug("[tmp-o9NQn5] ")
     registry.subscribe(
         _create_port_in_external_dns_service, resources.PORT,
         events.AFTER_CREATE)
