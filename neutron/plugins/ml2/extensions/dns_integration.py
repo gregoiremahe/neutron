@@ -93,8 +93,9 @@ class DNSExtensionDriver(api.ExtensionDriver):
 
     def _create_port_dns_record(self, plugin_context, request_data, db_data,
                                 network, dns_name):
+        # We added tenant_id to have a "default" zone for each tenant
         external_dns_domain = (request_data.get(dns_apidef.DNSDOMAIN) or
-                               network.get(dns_apidef.DNSDOMAIN))
+                               db_data["tenant_id"] + "." + network.get(dns_apidef.DNSDOMAIN))
         current_dns_name, current_dns_domain = (
             self._calculate_current_dns_name_and_domain(
                 dns_name, external_dns_domain,
@@ -363,13 +364,13 @@ class DNSExtensionDriverML2(DNSExtensionDriver):
         if not dns_driver:
             return True
         if network['router:external']:
-            return True
+            return False # dns is needed for router external (public IPs)
         segments = segments_db.get_network_segments(context, network['id'])
         if len(segments) > 1:
             return False
         provider_net = segments[0]
         if provider_net['network_type'] == 'local':
-            return True
+            return True # We will have to set this to False to enable dns on internal networks
         if provider_net['network_type'] == 'flat':
             return False
         if provider_net['network_type'] == 'vlan':
