@@ -89,7 +89,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
             current_dns_domain = ''
         else:
             current_dns_name = dns_name
-            current_dns_domain = network[dns.DNSDOMAIN]
+            current_dns_domain = db_data["tenant_id"] + "." + network[dns.DNSDOMAIN]
 
         plugin_context.session.add(dns_db.PortDNS(
             port_id=db_data['id'],
@@ -294,7 +294,7 @@ class DNSExtensionDriverML2(DNSExtensionDriver):
         if not dns_driver:
             return True
         if network['router:external']:
-            return True
+            return False
         segments = segments_db.get_network_segments(context.session,
                                                     network['id'])
         if len(segments) > 1:
