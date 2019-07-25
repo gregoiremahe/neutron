@@ -213,7 +213,13 @@ class DNSExtensionDriver(api.ExtensionDriver):
             if dns_data_db:
                 dns_name = dns_data_db.dns_name
         # Setup the right fqdn information in neutron database (on port object)
-        return dns_name, dns_data_db['current_dns_domain']
+        if dns_data_db['current_dns_domain'] == dns_domain:
+            # Port created by nova (openstack server create)
+            dns_dom = dns_data_db['previous_dns_domain']
+        else:
+            # Port created by user (openstack port create)
+            dns_dom = dns_data_db['current_dns_domain']
+        return dns_name, dns_dom
 
     def _get_dns_names_for_port(self, ips, dns_data_db):
         dns_assignment = []
