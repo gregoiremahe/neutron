@@ -76,8 +76,6 @@ class DNSExtensionDriver(api.ExtensionDriver):
             db_data[dns.DNSDOMAIN] = new_value
 
     def process_create_port(self, plugin_context, request_data, db_data):
-        if not request_data.get(dns.DNSNAME):
-            return
         dns_name, is_dns_domain_default = self._get_request_dns_name(
             request_data)
         if is_dns_domain_default:
@@ -201,6 +199,8 @@ class DNSExtensionDriver(api.ExtensionDriver):
     def _get_request_dns_name(self, port):
         dns_domain = self._get_dns_domain()
         if ((dns_domain and dns_domain != DNS_DOMAIN_DEFAULT)):
+            if port.get(dns.DNSNAME) == '':
+                return (port.get('name', ''), False)
             return (port.get(dns.DNSNAME, ''), False)
         return ('', True)
 
@@ -210,7 +210,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
         if ((dns_domain and dns_domain != DNS_DOMAIN_DEFAULT)):
             if dns_data_db:
                 dns_name = dns_data_db.dns_name
-        return dns_name, dns_domain
+        return dns_name, dns_data_db['current_dns_domain']
 
     def _get_dns_names_for_port(self, ips, dns_data_db):
         dns_assignment = []
