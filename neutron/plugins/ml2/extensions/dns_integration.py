@@ -354,7 +354,7 @@ def _create_port_in_external_dns_service(resource, event, trigger, **kwargs):
         return
     records = [ip['ip_address'] for ip in port['fixed_ips']]
     _send_data_to_external_dns_service(context, dns_driver,
-                                       dns_data_db['current_dns_domain'],
+                                       kwargs['port']['tenant_id'] + '.' + dns_data_db['current_dns_domain'],
                                        dns_data_db['current_dns_name'],
                                        records)
 
@@ -411,11 +411,12 @@ def _update_port_in_external_dns_service(resource, event, trigger, **kwargs):
         return
     if dns_data_db['previous_dns_name']:
         _remove_data_from_external_dns_service(
-            context, dns_driver, dns_data_db['previous_dns_domain'],
+            context, dns_driver, kwargs['port']['tenant_id'] + '.' + dns_data_db['previous_dns_domain'],
             dns_data_db['previous_dns_name'], original_ips)
     if dns_data_db['current_dns_name']:
+        # To push the right zone (<tenantid>.defaultzone.com.) on designate-api from nova
         _send_data_to_external_dns_service(context, dns_driver,
-                                           dns_data_db['current_dns_domain'],
+                                           kwargs['port']['tenant_id'] + '.' + dns_data_db['current_dns_domain'],
                                            dns_data_db['current_dns_name'],
                                            updated_ips)
 
@@ -435,7 +436,7 @@ def _delete_port_in_external_dns_service(resource, event, trigger, **kwargs):
             models_v2.IPAllocation).filter_by(port_id=port_id).all()
         records = [alloc['ip_address'] for alloc in ip_allocations]
         _remove_data_from_external_dns_service(
-            context, dns_driver, dns_data_db['current_dns_domain'],
+            context, dns_driver, dns_data_db['previous_dns_domain'],
             dns_data_db['current_dns_name'], records)
 
 
