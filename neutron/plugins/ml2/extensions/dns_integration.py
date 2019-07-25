@@ -87,6 +87,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
             current_dns_domain = ''
         else:
             current_dns_name = dns_name
+            # To push the right zone (<tenantid>.defaultzone.com.) on designate api
             current_dns_domain = db_data["tenant_id"] + "." + network[dns.DNSDOMAIN]
 
         plugin_context.session.add(dns_db.PortDNS(
@@ -199,6 +200,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
     def _get_request_dns_name(self, port):
         dns_domain = self._get_dns_domain()
         if ((dns_domain and dns_domain != DNS_DOMAIN_DEFAULT)):
+            # dns_name equals port name in case of dns_name is not specified by the user
             if port.get(dns.DNSNAME) == '':
                 return (port.get('name', ''), False)
             return (port.get(dns.DNSNAME, ''), False)
@@ -210,6 +212,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
         if ((dns_domain and dns_domain != DNS_DOMAIN_DEFAULT)):
             if dns_data_db:
                 dns_name = dns_data_db.dns_name
+        # Setup the right fqdn information in neutron database (on port object)
         return dns_name, dns_data_db['current_dns_domain']
 
     def _get_dns_names_for_port(self, ips, dns_data_db):
@@ -294,6 +297,7 @@ class DNSExtensionDriverML2(DNSExtensionDriver):
         if not dns_driver:
             return True
         if network['router:external']:
+            # dns is actually needed when network type is external
             return False
         segments = segments_db.get_network_segments(context.session,
                                                     network['id'])
