@@ -290,9 +290,8 @@ class DNSExtensionDriver(api.ExtensionDriver):
                 dns_name = dns_data_db.dns_name
 
         # Setup the right fqdn information in neutron port (dns_assigment)
-        dns_dom = dns_domain
-        if callable(getattr(dns_data_db, 'get', None):
-            dns_dom = dns_data_db.get('current_dns_domain')
+        if callable(getattr(dns_data_db, 'get', None)):
+            dns_domain = dns_data_db.get('current_dns_domain')
 
         return dns_name, dns_domain
 
