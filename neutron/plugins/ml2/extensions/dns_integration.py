@@ -101,6 +101,11 @@ class DNSExtensionDriver(api.ExtensionDriver):
                 dns_name, external_dns_domain,
                 self.external_dns_not_needed(plugin_context, network)))
 
+	# Temporary, we check if zone startswith var---tenantid. to parse the tenant
+        tenant_prefix = 'var---tenantid.'
+        if current_dns_domain.startswith(tenant_prefix):
+            current_dns_domain = db_data['tenant_id'] + '.' + current_dns_domain[len(tenant_prefix):]
+
         dns_data_obj = port_obj.PortDNS(
             plugin_context,
             port_id=db_data['id'],
@@ -282,6 +287,12 @@ class DNSExtensionDriver(api.ExtensionDriver):
         if dns_domain and dns_domain != lib_const.DNS_DOMAIN_DEFAULT:
             if dns_data_db:
                 dns_name = dns_data_db.dns_name
+
+        # Setup the right fqdn information in neutron port (dns_assigment)
+        dns_dom = dns_domain
+        if dns_data_db is not None:
+            dns_dom = dns_data_db.get('current_dns_domain')
+
         return dns_name, dns_domain
 
     def _get_dns_names_for_port(self, ips, dns_data_db):
@@ -366,7 +377,8 @@ class DNSExtensionDriverML2(DNSExtensionDriver):
         if not dns_driver:
             return True
         if network['router:external']:
-            return True
+            # dns is actually needed when network type is external
+            return False
         segments = segments_db.get_network_segments(context, network['id'])
         if len(segments) > 1:
             return False
