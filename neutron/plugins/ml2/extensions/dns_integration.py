@@ -35,6 +35,8 @@ from neutron.services.externaldns import driver
 LOG = logging.getLogger(__name__)
 
 
+PARSE_TENANT_ZONE_PREFIX = 'var---tenantid.'
+
 class DNSExtensionDriver(api.ExtensionDriver):
     _supported_extension_alias = dns_apidef.ALIAS
 
@@ -102,9 +104,8 @@ class DNSExtensionDriver(api.ExtensionDriver):
                 self.external_dns_not_needed(plugin_context, network)))
 
 	# Temporary, we check if zone startswith var---tenantid. to parse the tenant
-        tenant_prefix = 'var---tenantid.'
-        if current_dns_domain.startswith(tenant_prefix):
-            current_dns_domain = db_data['tenant_id'] + '.' + current_dns_domain[len(tenant_prefix):]
+        if current_dns_domain.startswith(PARSE_TENANT_ZONE_PREFIX):
+            current_dns_domain = db_data['tenant_id'] + '.' + current_dns_domain[len(PARSE_TENANT_ZONE_PREFIX):]
 
         dns_data_obj = port_obj.PortDNS(
             plugin_context,
@@ -290,7 +291,7 @@ class DNSExtensionDriver(api.ExtensionDriver):
 
         # Setup the right fqdn information in neutron port (dns_assigment)
         dns_dom = dns_domain
-        if dns_data_db is not None:
+        if callable(getattr(dns_data_db, 'get', None):
             dns_dom = dns_data_db.get('current_dns_domain')
 
         return dns_name, dns_domain
